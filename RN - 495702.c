@@ -243,12 +243,12 @@ void RemoverRN(No* z, No** ptraiz) {
         y->cor = z->cor;
     }
 
-    
+     //free(z); 
     
     if (corOriginal == 'N') {
         RotaRemoverRN(x, ptraiz);
     }
-    free(z);  // Lembre-se de liberar a memória alocada para o nó removido
+   
 }
 
 // Função para calcular a altura negra de uma subárvore
@@ -294,9 +294,19 @@ No* NovoNo(int chave, char cor) {
 int ContarNosRubroNegra(No *raiz) {
     if (raiz == NULL) 
         return 0;
-    
-    int nosEsq = ContarNosRubroNegra(raiz->esq);
-    int nosDir = ContarNosRubroNegra(raiz->dir);
+
+    int nosEsq = 0;
+    int nosDir = 0;
+
+    if (raiz->esq != NULL) {
+        nosEsq = ContarNosRubroNegra(raiz->esq);
+    }
+
+    if (raiz->dir != NULL) {
+        nosDir = ContarNosRubroNegra(raiz->dir);
+    }
+
+    printf("Nó atual: %d\n", raiz->chave); // Mensagem de debug
 
     int x = 1 + nosEsq + nosDir;
     return x;   
@@ -322,43 +332,26 @@ No* BuscarNo(No* raiz, int chave) {
     return raiz;
 }
 
-int *pegar_chave(int totalInsercoes) {
-	int *keys = malloc(sizeof(int) * totalInsercoes);
-
-	srand(time(NULL));
-
-	for(int i = 0; i < totalInsercoes; ) {
-		bool chave_repetida = true;
-		int nova_chave = rand();
-
-		for(int j = i - 1; j >= 0 && chave_repetida; j--)
-			if(nova_chave == keys[j])
-				chave_repetida = false;
-
-		if(chave_repetida) {
-			keys[i] = nova_chave;
-			i++;
-		}
-	}
-
-	return keys;
-}
 
 int main() {
     srand(time(NULL));
 
     int totalArvores = 1;
-    int totalInsercoes = 100;
+    int totalInsercoes = 10;
     int totalRemocoes = 10;
-    int *chave = pegar_chave(totalInsercoes);
+
     for (int i = 0; i < totalArvores; ++i) {
-        No* raiz = NULL;
+        No *raiz = NULL;
+        No **arrayNos = malloc(totalInsercoes * sizeof(No *));
+        int totalInsercoesAtual = 0;
 
-        // Inserir aleatoriamente 10.000 nós na árvore
+        // Inserir aleatoriamente 10.000 nós no array
         for (int j = 0; j < totalInsercoes; ++j) {
-
-            No* novoNo = NovoNo(chave[j], 'R'); // Criar um novo nó com a chave
-            InserirRN(novoNo, &raiz); // Passar o novo nó e o endereço do ponteiro da raiz
+            int chave = rand() % 100001; // Chaves entre 0 e 100.000
+            No *novoNo = NovoNo(chave, 'R'); // Criar um novo nó com a chave
+            InserirRN(novoNo, &raiz);
+            arrayNos[totalInsercoesAtual] = novoNo;
+            ++totalInsercoesAtual;
         }
 
         // Verificar se a árvore possui os 10.000 nós pela contagem
@@ -373,23 +366,23 @@ int main() {
             break;
         }
 
-        
-        // Remover nós aleatórios
+        // Remover 1.000 nós aleatórios do array
         for (int k = 0; k < totalRemocoes; ++k) {
-            
-            No* noRemover = BuscarNo(raiz, chave[k]);
-           
-            if (noRemover != NULL) {
+            if (totalInsercoesAtual > 0) {
+                int indiceRemover = rand() % totalInsercoesAtual;
+                No *noRemover = arrayNos[indiceRemover];
                 RemoverRN(noRemover, &raiz);
-               
+                // Atualizar o arrayNos e o totalInsercoesAtual após a remoção
+                for (int l = indiceRemover; l < totalInsercoesAtual - 1; ++l) {
+                    arrayNos[l] = arrayNos[l + 1];
+                }
+                --totalInsercoesAtual;
             }
-            
         }
 
-        // Atualizar a quantidade de nós após remoções
-        int quantidadeNosRestantes = ContarNosRubroNegra(raiz);
-        if(totalInsercoes - totalRemocoes == quantidadeNosRestantes)
-            printf("Arvore %d - Nós restantes após remoções: %d\n", i + 1, quantidadeNosRestantes);
+        // Verificar se a árvore possui os 9.000 nós após remoções
+        int quantidadeNosRemovidos = ContarNosRubroNegra(raiz);
+        printf("Arvore %d - Nós restantes após remoções: %d\n", i + 1, quantidadeNosRemovidos);
 
         // Verificar se a árvore continua Rubro-Negra após remoções
         if (!VerificarRubroNegra(raiz)) {
@@ -398,20 +391,10 @@ int main() {
             printf("Arvore %d - Continua Rubro-Negra após remoções.\n", i + 1);
         }
 
-        // Liberar a memória alocada para a árvore
+        // Liberar a memória alocada para o array e para a árvore
+        free(arrayNos);
         LiberarArvore(raiz);
     }
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
