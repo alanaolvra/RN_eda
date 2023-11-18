@@ -165,10 +165,10 @@ void RotaRemoverRN(No *x, No **ptraiz) {
                 }
                 w->cor = x->pai->cor;
                 x->pai->cor = 'N';
-                w->dir->cor = 'N';
-                RotacaoE(x->pai, ptraiz);
-                x = *ptraiz;
             }
+            w->dir->cor = 'N';
+            RotacaoE(x->pai, ptraiz);
+            x = *ptraiz;
         } else {
             No *w = x->pai->esq;
             if (w->cor == 'R') {
@@ -189,10 +189,10 @@ void RotaRemoverRN(No *x, No **ptraiz) {
                 }
                 w->cor = x->pai->cor;
                 x->pai->cor = 'N';
-                w->esq->cor = 'N';
-                RotacaoD(x->pai, ptraiz);
-                x = *ptraiz;
             }
+            w->esq->cor = 'N';
+            RotacaoD(x->pai, ptraiz);
+            x = *ptraiz;
         }
     }
     x->cor = 'N';
@@ -209,47 +209,49 @@ No* Sucessor(No* x) {
 // Função para remover um nó da árvore vermelho-preto
 void RemoverRN(No* z, No** ptraiz) {
 
-     if (z == NULL) {
+    if (z == *ptraiz) {
         return; // Não há o que remover se o nó é nulo
     }
-
     No *y, *x;
-    char corOriginal = z->cor;
-
-    if (*ptraiz == NULL) {
-            return;
-        }
-    
-    if (z->esq == NULL) {
+    y = z;
+    char corOriginal = y->cor;  
+    if (y->esq == NULL) {
         x = z->dir;
         MoverPai(z, z->dir, ptraiz);
-    } else if (z->dir == NULL) {
+    } else if (y->dir == NULL) {
         x = z->esq;
         MoverPai(z, z->esq, ptraiz);
     } else {
         y = Sucessor(z);
         corOriginal = y->cor;
         x = y->dir;
-        
         if (y->pai != z) {
-            MoverPai(y, y->dir, ptraiz);
+            MoverPai(y, x, ptraiz);
             y->dir = z->dir;
-            y->dir->pai = y;
+            y->pai->dir = y;
         }
-
         MoverPai(z, y, ptraiz);
         y->esq = z->esq;
         y->esq->pai = y;
-        y->cor = z->cor;
     }
 
-     //free(z); 
-    
     if (corOriginal == 'N') {
+        if (x != NULL) {
+            x->cor = 'N';
+        }
         RotaRemoverRN(x, ptraiz);
+    } else {
+        z->cor = 'N';
     }
-   
+
+    if (z == *ptraiz) {
+        *ptraiz = x;
+        if (x != NULL) {
+            x->cor = 'N';
+        }
+    }
 }
+
 
 // Função para calcular a altura negra de uma subárvore
 int AlturaNegra(No *raiz) {
@@ -306,8 +308,6 @@ int ContarNosRubroNegra(No *raiz) {
         nosDir = ContarNosRubroNegra(raiz->dir);
     }
 
-    printf("Nó atual: %d\n", raiz->chave); // Mensagem de debug
-
     int x = 1 + nosEsq + nosDir;
     return x;   
 }
@@ -337,7 +337,7 @@ int main() {
     srand(time(NULL));
 
     int totalArvores = 1;
-    int totalInsercoes = 10;
+    int totalInsercoes = 100;
     int totalRemocoes = 10;
 
     for (int i = 0; i < totalArvores; ++i) {
@@ -369,7 +369,11 @@ int main() {
         // Remover 1.000 nós aleatórios do array
         for (int k = 0; k < totalRemocoes; ++k) {
             if (totalInsercoesAtual > 0) {
-                int indiceRemover = rand() % totalInsercoesAtual;
+                int indiceAnterior, indiceRemover;
+                do {
+                     indiceRemover = rand() % totalInsercoes;
+                } while (indiceRemover == indiceAnterior);
+                indiceAnterior = indiceRemover;
                 No *noRemover = arrayNos[indiceRemover];
                 RemoverRN(noRemover, &raiz);
                 // Atualizar o arrayNos e o totalInsercoesAtual após a remoção
