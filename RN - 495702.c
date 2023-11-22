@@ -155,6 +155,7 @@ void InserirRN(Arvore *arvore, int key) {
 	RotaRN(arvore, z); // verifica se nenhuma regra da RN esta sendo violada
 }
 
+//Busca na arvore o no com a chave especificada
 NO *BuscarNo(NO *aux, NO *externo, int key) {
 	if(aux == externo)
 		return externo;
@@ -286,6 +287,7 @@ void RemoverRN(Arvore *arvore, int key) {
 	free(z);
 }
 
+//realiza um percurso em profundidade (Pós-ordem) na árvore: libera a memória alocada para cada nó durante o percuso
 void Transversal(NO *aux, NO *externo) {
 	if(aux != externo) {
 		Transversal(aux->esq, externo);
@@ -299,7 +301,7 @@ void LiberarArvore(Arvore *arvore) {
 	free(arvore->externo);
 }
 
-
+//cria um array de chaves unicas e aleatorias
 int *BuscarChave(int qtd_chave) {
 	int *keys = malloc(sizeof(int) * qtd_chave);
 
@@ -322,6 +324,7 @@ int *BuscarChave(int qtd_chave) {
 	return keys;
 }
 
+//Realiza um percurso em profundidade na árvore e retorna a altura negra se todas as propriedades forem atendidas
 int TransversalNegra(NO *aux, NO *externo) {
 	if(aux == externo)
 		return 1;
@@ -348,6 +351,7 @@ int AlturaNegra(NO *aux, NO *externo) {
 		return esq_altura;
 }
 
+//verifica se a arvore atende todas as propriedades com base nas suas alturas negras
 bool VerificarRubroNegra(NO *aux, NO *externo) {
 	if(aux == externo)
 		return true;
