@@ -1,22 +1,38 @@
-#include <stdio.h>
-#include <stdlib.h>
+//Nome: Alana Cristina Lima de Oliveira 	Matrícula: 495702
+#include<stdio.h>
+#include<stdlib.h>
 #include <time.h>
 #include <stdbool.h>
 
-// Definição da estrutura de um nó da árvore vermelho-preto
-typedef struct No {
-    int chave;
-    char cor; // 'R' para vermelho, 'B' para preto
-    struct No *esq, *dir, *pai;
-} No;
+typedef enum {
+	R, N
+} COR;
+
+//Estrutura da RN
+typedef struct NO {
+	int key;
+	COR cor;
+	struct NO *pai, *esq, *dir;
+} NO;
 
 typedef struct {
-	No *raiz, *externo;
+	NO *raiz, *externo;
 } Arvore;
 
-// Função para realizar rotação à esquerda
-void RotacaoE(No *x, Arvore *arvore) {
-    No *y = x->dir;
+Arvore CriarRN() {
+	Arvore arvore;
+
+	arvore.externo = malloc(sizeof(NO));
+	arvore.externo->cor = N;
+	arvore.raiz = arvore.externo;
+
+	return arvore;
+}
+
+// Rotacao pra esquerda
+void RotacaoE(Arvore *arvore, NO *x) {
+	// y armazena o filho a direita de x
+	NO *y = x->dir;
 	x->dir = y->esq;
 
 	if(y->esq != arvore->externo) // atualiza o no a esquerda do pai
@@ -35,9 +51,9 @@ void RotacaoE(No *x, Arvore *arvore) {
 	x->pai = y; // atualiza o pai de x
 }
 
-// Função para realizar rotação à direita
-void RotacaoD(No *y, Arvore *arvore) {
-    No *x = y->esq;
+// Rotacao pra direita
+void RotacaoD(Arvore *arvore, NO *y) {
+	NO *x = y->esq;
 	y->esq = x->dir;
 
 	if(x->dir != arvore->externo)
@@ -56,272 +72,240 @@ void RotacaoD(No *y, Arvore *arvore) {
 	y->pai = x;
 }
 
-// Função modificada RotaRN para incluir a rotação à esquerda e à direita
-void RotaRN(No *z, Arvore *arvore) {
-    while (z->pai != NULL && z->pai->cor == 'R') {
-        if (z->pai == z->pai->pai->esq) {
-            No *y = z->pai->pai->dir;
-            if (y != NULL && y->cor == 'R') {
-                z->pai->cor = 'B';
-                y->cor = 'B';
-                z->pai->pai->cor = 'R';
-                z = z->pai->pai;
-            } else {
-                if (z == z->pai->dir) {
-                    z = z->pai;
-                    RotacaoE(z, arvore);
-                }
-                z->pai->cor = 'B';
-                z->pai->pai->cor = 'R';
-                RotacaoD(z->pai->pai, arvore);
-            }
-        } else {
-            No *y = z->pai->pai->esq;
-            if (y != NULL && y->cor == 'R') {
-                z->pai->cor = 'B';
-                y->cor = 'B';
-                z->pai->pai->cor = 'R';
-                z = z->pai->pai;
-            } else {
-                if (z == z->pai->esq) {
-                    z = z->pai;
-                    RotacaoD(z, arvore);
-                }
-                z->pai->cor = 'B';
-                z->pai->pai->cor = 'R';
-                RotacaoE(z->pai->pai, arvore);
-            }
-        }
-    }
-    arvore->raiz->cor = 'B';
+void RotaRN(Arvore *arvore, NO *z) {
+	// interar ate que z nao seja mais raiz e a cor do pai seja rubro
+	while(z->pai->cor == R) {
+		 // encontra o tio e armazena em y
+		if(z->pai == z->pai->pai->esq) {
+			NO *y = z->pai->pai->dir;
+
+			// se o tio for rubro
+			if(y->cor == R) {
+				z->pai->cor = N;
+				y->cor = N; // troca a cor do tio e a do pai pra negra
+				z->pai->pai->cor = R; // muda a cor do avo pra rubro
+				z = z->pai->pai; // move z para o avo
+			} 
+			else {
+				// se o tio for negro
+				if(z == z->pai->dir) {
+					// LR
+                    // Troca a cor do no atual com a do avo
+					z = z->pai;
+					RotacaoE(arvore, z); // gira o pai pra esquerda
+				}
+				// LL
+                // Troca a cor do pai com a do avo
+				z->pai->cor = N;
+				z->pai->pai->cor = R;
+				RotacaoD(arvore, z->pai->pai); // gira o avo pra direita
+			}
+		} else {
+			NO *y = z->pai->pai->esq;
+
+			if(y->cor == R) {
+				z->pai->cor = N;
+				y->cor = N;
+				z->pai->pai->cor = R;
+				z = z->pai->pai;
+			} else {
+				if(z == z->pai->esq) {
+					// RL
+					z = z->pai;
+					RotacaoD(arvore, z); // gira o pai pra direita
+				}
+				// RR
+				z->pai->cor = N; // troca a cor do pai com a do avo
+				z->pai->pai->cor = R;
+				RotacaoE(arvore, z->pai->pai); // gira o avo pra esquerda
+			}
+		}
+	}
+
+	arvore->raiz->cor = N; // cor da raiz vai ser sempre negra
 }
 
-void InserirRN(Arvore *arvore, int chave) {
-    No *y = arvore->externo;
-    No *pt = arvore->raiz;
-    
-    No *z = malloc(sizeof(No));
-	z->chave = chave;
-	z->cor = 'R';
+void InserirRN(Arvore *arvore, int key) {
+	NO *x = arvore->raiz, *y = arvore->externo;
+
+	// Etapas padrao pra insercao do primeiro no
+	while(x != arvore->externo) {
+		y = x;
+
+		if(key < x->key)
+			x = x->esq;
+		else
+			x = x->dir;
+	}
+	// Alocar memoria pro novo no
+	NO *z = malloc(sizeof(NO));
+	z->key = key;
+	z->cor = R;
 	z->pai = y;
 	z->esq = arvore->externo;
 	z->dir = arvore->externo;
 
-    while (pt != arvore->externo) {
-        y = pt;
-        if (z->chave == pt->chave) {
-            printf("Chave existente\n");
-            y = NULL;
-            pt = arvore->externo;
-        }else{
-            if (z->chave < pt->chave) {
-            pt = pt->esq;
-        } else {
-            pt = pt->dir;
-        } 
-    }
+	if(y == arvore->externo) //se a raiz for nula, faz de z a raiz
+		arvore->raiz = z;
+	else if(key < y->key)
+		y->esq = z;
+	else
+		y->dir = z;
 
-    if (y != NULL) {
-        z->pai = y;
-        if (y == arvore->externo) {
-            arvore->raiz = z;
-        } else{
-            if (z->chave < y->chave) {
-                y->esq = z;
-            } else {
-                y->dir = z;
-            }
-        } 
-        z->esq = z->dir = arvore->externo;
-        z->cor = 'R';
-        RotaRN(z, arvore);  // Chamada da função RotaRN
-        }
-    }
+	RotaRN(arvore, z); // verifica se nenhuma regra da RN esta sendo violada
 }
 
-void MoverPai(No *u, No *v, Arvore *arvore) {
-    if (u->pai == arvore->externo) {
-        arvore->raiz = v;
-    } else {
-        if (u == u->pai->esq) {
-            u->pai->esq = v;
-        } else {
-            u->pai->dir = v;
-        }     
-    }
-    v->pai = u->pai;     
+NO *BuscarNo(NO *aux, NO *externo, int key) {
+	if(aux == externo)
+		return externo;
+	else if(aux->key > key)
+		return BuscarNo(aux->esq, externo, key);
+	else if(aux->key < key)
+		return BuscarNo(aux->dir, externo, key);
+	else
+		return aux;
 }
 
-// Função para realizar a rotação após a remoção
-void RotaRemoverRN(No *x, Arvore *arvore) {
-    while(x != arvore->raiz && x->cor == 'N') {
+void MoverPai(Arvore *arvore, NO *u, NO *v) {  // funcao pra substituir nos
+	if(u->pai == arvore->externo)
+		arvore->raiz = v;
+	else if(u == u->pai->esq) // se U for o filho da esquerda
+		u->pai->esq = v;
+	else
+		u->pai->dir = v; // se U for filho da direita
+
+	v->pai = u->pai;
+}
+
+NO *Sucessor(Arvore *arvore, NO *x) {
+	while(x->esq != arvore->externo)
+		x = x->esq;
+
+	return x;
+}
+
+void RotaRemoverRN(Arvore *arvore, NO *x) {
+	while(x != arvore->raiz && x->cor == N) {
 		if(x == x->pai->esq) {
-			No *w = x->pai->dir;
+			NO *w = x->pai->dir;
 
-			if(w->cor == 'R') {
-				w->cor = 'N';
-				x->pai->cor = 'R';
-				RotacaoE(x->pai, arvore);
+			if(w->cor == R) {
+				w->cor = N;
+				x->pai->cor = R;
+				RotacaoE(arvore, x->pai);
 				w = x->pai->dir;
 			}
 
-			if(w->esq->cor == 'N' && w->dir->cor == 'N') {
-				w->cor = 'R';
+			if(w->esq->cor == N && w->dir->cor == N) {
+				w->cor = R;
 				x = x->pai;
 			} else {
-				if(w->dir->cor == 'N') {
-					w->esq->cor = 'N';
-					w->cor = 'R';
-					RotacaoD(w, arvore);
+				if(w->dir->cor == N) {
+					w->esq->cor = N;
+					w->cor = R;
+					RotacaoD(arvore, w);
 					w = x->pai->dir;
 				}
 
 				w->cor = x->pai->cor;
-				x->pai->cor = 'N';
-				w->dir->cor = 'N';
-				RotacaoE(x->pai, arvore);
+				x->pai->cor = N;
+				w->dir->cor = N;
+				RotacaoE(arvore, x->pai);
 				x = arvore->raiz;
 			}
 		} else {
-			No *w = x->pai->esq;
+			NO *w = x->pai->esq;
 
-			if(w->cor == 'R') {
-				w->cor = 'N';
-				x->pai->cor = 'R';
-				RotacaoD(x->pai, arvore);
+			if(w->cor == R) {
+				w->cor = N;
+				x->pai->cor = R;
+				RotacaoD(arvore, x->pai);
 				w = x->pai->esq;
 			}
 
-			if(w->dir->cor == 'N' && w->esq->cor == 'N') {
-				w->cor = 'R';
+			if(w->dir->cor == N && w->esq->cor == N) {
+				w->cor = R;
 				x = x->pai;
 			} else {
-				if(w->esq->cor == 'N') {
-					w->dir->cor = 'N';
-					w->cor = 'R';
-					RotacaoE(w, arvore);
+				if(w->esq->cor == N) {
+					w->dir->cor = N;
+					w->cor = R;
+					RotacaoE(arvore, w);
 					w = x->pai->esq;
 				}
 
 				w->cor = x->pai->cor;
-				x->pai->cor = 'N';
-				w->esq->cor = 'N';
-				RotacaoD(x->pai, arvore);
+				x->pai->cor = N;
+				w->esq->cor = N;
+				RotacaoD(arvore, x->pai);
 				x = arvore->raiz;
 			}
 		}
-    }
+	}
+
+	x->cor = N;
 }
 
-// Função para encontrar o sucessor de um nó na árvore
-No* Sucessor(No* x) {
-    while (x->esq != NULL) {
-        x = x->esq;
-    }
-    return x;
-}
+void RemoverRN(Arvore *arvore, int key) {
+	NO *z = BuscarNo(arvore->raiz, arvore->externo, key);
 
-// Função para remover um nó da árvore vermelho-preto
-void RemoverRN(Arvore* arvore, int chave) {
-    No* z;
-    if(z == arvore->externo)
+	if(z == arvore->externo)
 		return;
 
-    No *y, *x;
-    y = z;
-    char corOriginal = y->cor;  
+	NO *y = z, *x;
+	COR y_original_cor = y->cor;
 
-    if (y->esq == arvore->externo) {
-        x = z->dir;
-        MoverPai(z, z->dir, arvore);
-    } else{
-         if (y->dir == arvore->externo) {
-            x = z->esq;
-            MoverPai(z, z->esq, arvore);
-        }else {
-            y = Sucessor(z);
-            corOriginal = y->cor;
-            x = y->dir;
-            if (y->pai != z) {
-                MoverPai(y, x, arvore);
-                y->dir = z->dir;
-                y->pai->dir = y;
-            }
-            MoverPai(z, y, arvore);
-            y->esq = z->esq;
-            y->esq->pai = y;
-        }
-    }
+	if(z->esq == arvore->externo) {
+		x = z->dir;
+		MoverPai(arvore, z, z->dir);
+	} else if(z->dir == arvore->externo) {
+		x = z->esq;
+		MoverPai(arvore, z, z->esq);
+	} else {
+		y = Sucessor(arvore, z->dir);
+		y_original_cor = y->cor;
+		x = y->dir;
 
-    if (corOriginal == 'N') {
-        RotaRemoverRN(x, arvore);
-    }
+		if(y->pai == z)
+			x->pai = y;
+		else {
+			MoverPai(arvore, y, y->dir);
+			y->dir = z->dir;
+			y->dir->pai = y;
+		}
+
+		MoverPai(arvore, z, y);
+		y->esq = z->esq;
+		y->esq->pai = y;
+		y->cor = z->cor;
+	}
+
+	if(y_original_cor == N)
+		RotaRemoverRN(arvore, x);
+
+	free(z);
+}
+
+void Transversal(NO *aux, NO *externo) {
+	if(aux != externo) {
+		Transversal(aux->esq, externo);
+		Transversal(aux->dir, externo);
+		free(aux);
+	}
+}
+
+void LiberarArvore(Arvore *arvore) {
+	Transversal(arvore->raiz, arvore->externo);
+	free(arvore->externo);
 }
 
 
-// Função para calcular a altura negra de uma subárvore
-int AlturaNegra(No *raiz) {
-    if (raiz == NULL) {
-        return 1;
-    } else {
-        int alturaEsq = AlturaNegra(raiz->esq);
-        int alturaDir = AlturaNegra(raiz->dir);
-
-        if (alturaEsq != alturaDir || (raiz->cor == 'R' && (raiz->esq == NULL || raiz->esq->cor == 'R'))) {
-            // Verifica se as alturas negras são iguais e se não há nós vermelhos consecutivos
-            return -1;
-        } else {
-            return alturaEsq + (raiz->cor == 'B' ? 1 : 0);
-        }
-    }
-}
-
-// Função para verificar se uma árvore é Rubro-Negra
-int VerificarRubroNegra(No *aux, No *externo) {
-	if(aux == externo)
-		return true;
-	if(VerificarRubroNegra(aux->esq, externo))
-		return VerificarRubroNegra(aux->dir, externo);
-
-	return false;
-}
-
-// Função para criar um novo nó
-No* NovoNo(int chave, char cor) {
-    No* novo = (No*)malloc(sizeof(No));
-    if (novo == NULL) {
-        fprintf(stderr, "Erro na alocação de memória.\n");
-        exit(EXIT_FAILURE);
-    }
-    novo->chave = chave;
-    novo->cor = cor;
-    novo->esq = novo->dir = novo->pai = NULL;
-    return novo;
-}
-
-// Função para contar a quantidade de nós em uma árvore Rubro-Negra
-int ContarNosRubroNegra(No *aux, No *externo) {
-    if(aux == externo)
-		return 0;
-
-	return 1 + ContarNosRubroNegra(aux->esq, externo) + ContarNosRubroNegra(aux->dir, externo);  
-}
-
-// Função para liberar a memória alocada para a árvore
-void LiberarArvore(No* raiz) {
-    if (raiz != NULL) {
-        LiberarArvore(raiz->esq);
-        LiberarArvore(raiz->dir);
-        free(raiz);
-    }
-}
-
-int* BuscarChave(int chave) {
-   int *keys = malloc(sizeof(int) * chave);
+int *BuscarChave(int qtd_chave) {
+	int *keys = malloc(sizeof(int) * qtd_chave);
 
 	srand(time(NULL));
 
-	for(int i = 0; i < chave; ) {
+	for(int i = 0; i < qtd_chave; ) {
 		bool chave_repetida = true;
 		int nova_chave = rand();
 
@@ -338,76 +322,102 @@ int* BuscarChave(int chave) {
 	return keys;
 }
 
- No *BuscarNo(No *aux, No *externo, int key) {
+int TransversalNegra(NO *aux, NO *externo) {
 	if(aux == externo)
-		return externo;
-	else if(aux->chave > key)
-		return BuscarNo(aux->esq, externo, key);
-	else if(aux->chave < key)
-		return BuscarNo(aux->dir, externo, key);
+		return 1;
 
-	return aux;
+	int esq_altura = TransversalNegra(aux->esq, externo),
+	    dir_altura = TransversalNegra(aux->dir, externo);
+
+	if(esq_altura != dir_altura || esq_altura == -1)
+		return -1;
+	else
+		return esq_altura + (aux->cor == N? 1 : 0);
 }
 
-Arvore CriarRN() {
-	Arvore arvore;
+int AlturaNegra(NO *aux, NO *externo) {
+	if(aux == externo)
+		return 1;
 
-	arvore.externo = malloc(sizeof(No));
-	arvore.externo->cor = 'N';
-	arvore.raiz = arvore.externo;
+	int esq_altura = TransversalNegra(aux->esq, externo),
+	    dir_altura = TransversalNegra(aux->dir, externo);
 
-	return arvore;
+	if(esq_altura != dir_altura || esq_altura == -1)
+		return -1;
+	else
+		return esq_altura;
+}
+
+bool VerificarRubroNegra(NO *aux, NO *externo) {
+	if(aux == externo)
+		return true;
+
+	if(AlturaNegra(aux, externo) != -1)
+		if(VerificarRubroNegra(aux->esq, externo))
+			return VerificarRubroNegra(aux->dir, externo);
+
+	return false;
+}
+
+int ContarNos(NO *aux, NO *externo) {
+	if(aux == externo)
+		return 0;
+
+	return 1 + ContarNos(aux->esq, externo) + ContarNos(aux->dir, externo);
 }
 
 int main() {
-    srand(time(NULL));
+	int qnt_arvore = 1;
+	int cont = 0;
+	for(cont = 0; cont<qnt_arvore; cont++){
+		Arvore arvore = CriarRN();
+		const int qtd_chave = 100;
+		int *keys = BuscarChave(qtd_chave);
+		puts("-------------------------------- ");
+		printf("\nArvore RN %d\n", cont + 1);
+		printf("*Inserindo %d nós.*\n", qtd_chave);
+		for(int i = 0; i < qtd_chave; i++)
+		InserirRN(&arvore, keys[i]);
 
-    int totalArvores = 1;
-    int totalInsercoes = 10;
-    int totalRemocoes = 3;
+		int qtd_nos = ContarNos(arvore.raiz, arvore.externo);
 
-    for (int i = 0; i < totalArvores; ++i) {
-        Arvore arvore = CriarRN();
-        int *keys = BuscarChave(totalInsercoes);
-        int totalInsercoesAtual = 0;
+		if(qtd_chave == qtd_nos)
+			puts("Todos os nós foram inseridos.");
+		else {
+			printf("%d nós foram inseridos.\n", qtd_nos);
+			exit(EXIT_FAILURE);
+		}
 
-        // Inserir aleatoriamente 10.000 nós no array
-        for(int i = 0; i < totalInsercoes; i++)
-		    InserirRN(&arvore, keys[i]);
-        
+		if(VerificarRubroNegra(arvore.raiz, arvore.externo))
+			puts("A árvore é RN.");
+		else {
+			puts("A árvore não é RN");
+			exit(EXIT_FAILURE);
+		}
 
-        // Verificar se a árvore possui os 10.000 nós pela contagem
-        int quantidadeNosInseridos = ContarNosRubroNegra(arvore.raiz, arvore.externo);
-        printf("Arvore %d - Nós inseridos: %d\n", i + 1, quantidadeNosInseridos);
-
-        // Verificar se a árvore continua Rubro-Negra após inserções
-        if (VerificarRubroNegra(arvore.raiz, arvore.externo)) {
-            printf("Arvore %d - Continua Rubro-Negra após inserções.\n", i + 1);
-        } else {
-            printf("Arvore %d - Não é Rubro-Negra após inserções.\n", i + 1);
-            break;
-        }
-
-        // Remover 1.000 nós aleatórios do array
-       for(int i = 0; i < totalInsercoes; i += totalRemocoes)
+		int qtd_remover = 10;
+		printf("*Removendo %d nós.*\n", qtd_remover);
+		for(int i = 0; i < qtd_chave; i +=10)
 			RemoverRN(&arvore, keys[i]);
 
-		int quantidadeNosRestantes = ContarNosRubroNegra(arvore.raiz, arvore.externo);
+		qtd_nos = ContarNos(arvore.raiz, arvore.externo);
 
-        // Verificar se a árvore possui os 9.000 nós após remoções
-        printf("Arvore %d - Nós restantes após remoções: %d\n", i + 1, quantidadeNosRestantes);
+		if(qtd_chave - qtd_remover == qtd_nos)
+			printf("Todos os nós foram removidos. Nós atuais: %d\n", qtd_nos);
+		else {
+			printf("%d nós ainda estão na árvore.\n", qtd_nos);
+			exit(EXIT_FAILURE);
+		}
 
-        // Verificar se a árvore continua Rubro-Negra após remoções
-        if (!VerificarRubroNegra(arvore.raiz, arvore.externo)) {
-            printf("Arvore %d - Não é Rubro-Negra após remoções.\n", i + 1);
-        } else {
-            printf("Arvore %d - Continua Rubro-Negra após remoções.\n", i + 1);
-        }
+		if(VerificarRubroNegra(arvore.raiz, arvore.externo))
+			puts("A árvore é RN após as remoções.");
+		else {
+			puts("A árvore não é RN após as remoções");
+			exit(EXIT_FAILURE);
+		}
 
-        // Liberar a memória alocada para o array e para a árvore
-        free(keys);
-        LiberarArvore(arvore.raiz);
-    }
-
-    return 0;
+		free(keys);
+		LiberarArvore(&arvore);
+	}
+	return 0;
 }
